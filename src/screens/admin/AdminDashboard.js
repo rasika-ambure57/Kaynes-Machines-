@@ -37,12 +37,14 @@ export default function AdminDashboard({ navigation }) {
       const matchesDept =
         selectedDepartment === 'All' || machine.department === selectedDepartment;
       const query = searchQuery.trim().toLowerCase();
+      const modelStr = machine.model || machine.modelNumber || '';
+      const serialStr = machine.serialNumber || '';
       const matchesSearch =
         !query ||
         machine.name.toLowerCase().includes(query) ||
         machine.id.toLowerCase().includes(query) ||
-        machine.model.toLowerCase().includes(query) ||
-        machine.serialNumber.toLowerCase().includes(query);
+        modelStr.toLowerCase().includes(query) ||
+        serialStr.toLowerCase().includes(query);
       return matchesDept && matchesSearch;
     });
   }, [machines, selectedDepartment, searchQuery]);
@@ -89,7 +91,7 @@ export default function AdminDashboard({ navigation }) {
 
       <Text style={styles.machineName}>{item.name}</Text>
       <Text style={styles.machineModel}>
-        Model: <Text style={styles.modelHighlight}>{item.model}</Text> • SN: {item.serialNumber}
+        Model: <Text style={styles.modelHighlight}>{item.model || item.modelNumber}</Text> • SN: {item.serialNumber}
       </Text>
 
       <View style={styles.cardFooter}>
@@ -114,6 +116,14 @@ export default function AdminDashboard({ navigation }) {
 
       {/* Top Bar Header in Obsidian Black with Crimson Accent */}
       <View style={styles.topBar}>
+        <TouchableOpacity
+          style={styles.menuButton}
+          onPress={() => navigation.openDrawer()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="menu" size={26} color="#FFFFFF" />
+        </TouchableOpacity>
+
         <View style={styles.topBarLeft}>
           <View style={styles.plantTitleRow}>
             <Text style={styles.plantTitle}>KAYNES</Text>
@@ -269,6 +279,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 6,
+  },
+  menuButton: {
+    marginRight: 12,
+    padding: 2,
   },
   topBarLeft: {
     flex: 1,

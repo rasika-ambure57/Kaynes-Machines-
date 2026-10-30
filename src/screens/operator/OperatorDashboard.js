@@ -100,6 +100,14 @@ export default function OperatorDashboard({ navigation }) {
 
       {/* Top Header in Obsidian Black with Crimson Accent */}
       <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.menuButton}
+          onPress={() => navigation.openDrawer()}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="menu" size={26} color="#FFFFFF" />
+        </TouchableOpacity>
+
         <View style={styles.headerLeft}>
           <View style={styles.shopBadge}>
             <View style={styles.redDot} />
@@ -226,6 +234,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 6,
+  },
+  menuButton: {
+    marginRight: 12,
+    padding: 2,
   },
   headerLeft: {
     flex: 1,

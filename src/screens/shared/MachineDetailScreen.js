@@ -253,7 +253,7 @@ export default function MachineDetailScreen({ route, navigation }) {
           <View style={styles.specGrid}>
             <View style={styles.specItem}>
               <Text style={styles.specLabel}>Model Number</Text>
-              <Text style={styles.specValue}>{machine.model}</Text>
+              <Text style={styles.specValue}>{machine.model || machine.modelNumber}</Text>
             </View>
             <View style={styles.specItem}>
               <Text style={styles.specLabel}>Serial Number</Text>

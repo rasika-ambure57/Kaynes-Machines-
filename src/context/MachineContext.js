@@ -4,7 +4,7 @@ import { INITIAL_MACHINES } from '../utils/seedData';
 
 const MACHINES_STORAGE_KEY = '@pat_machines_data_v1';
 
-const MachineContext = createContext();
+export const MachineContext = createContext();
 
 export const MachineProvider = ({ children }) => {
   const [machines, setMachines] = useState([]);
@@ -53,8 +53,22 @@ export const MachineProvider = ({ children }) => {
     else if (department === 'Soldering & Assembly') prefix = 'SLD';
     else if (department === 'Cleanroom') prefix = 'CLN';
 
-    const count = machines.filter((m) => m.id.startsWith(`KYN-${prefix}`)).length + 1;
-    const padded = String(count).padStart(3, '0');
+    const regex = new RegExp(`^KYN-${prefix}-(\\d+)`);
+    let maxNum = 0;
+    (machines || []).forEach((m) => {
+      if (m && m.id) {
+        const match = m.id.match(regex);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (!isNaN(num) && num > maxNum) {
+            maxNum = num;
+          }
+        }
+      }
+    });
+
+    const nextNum = maxNum > 0 ? maxNum + 1 : ((machines || []).filter((m) => m && m.id && m.id.startsWith(`KYN-${prefix}`)).length + 1);
+    const padded = String(nextNum).padStart(3, '0');
     return `KYN-${prefix}-${padded}`;
   };
 
@@ -64,16 +78,26 @@ export const MachineProvider = ({ children }) => {
     const dateStr = now.toISOString().split('T')[0];
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+    const resolvedModel = (newMachineData.modelNumber || newMachineData.model || '').trim();
+    const resolvedName = (newMachineData.name || '').trim();
+    const resolvedDept = newMachineData.department || 'SMT Lines';
+
+    let newId = newMachineData.id?.trim();
+    if (!newId || (machines && machines.some((m) => m && m.id === newId))) {
+      newId = generateNextTagId(resolvedDept);
+    }
+
     const newMachine = {
-      id: newMachineData.id || generateNextTagId(newMachineData.department),
-      name: newMachineData.name.trim(),
-      model: newMachineData.model.trim(),
+      id: newId,
+      name: resolvedName,
+      model: resolvedModel,
+      modelNumber: resolvedModel,
       serialNumber: newMachineData.serialNumber?.trim() || `SN-${Date.now().toString().slice(-6)}`,
-      department: newMachineData.department || 'SMT Lines',
+      department: resolvedDept,
       status: newMachineData.status || 'ACTIVE',
       installDate: newMachineData.installDate || dateStr,
       lastServiced: dateStr,
-      line: newMachineData.line?.trim() || `${newMachineData.department} - Bay 1`,
+      line: newMachineData.line?.trim() || `${resolvedDept} - Bay 1`,
       logs: [
         {
           id: `log-${Date.now()}`,
@@ -85,8 +109,18 @@ export const MachineProvider = ({ children }) => {
       ],
     };
 
-    const updated = [newMachine, ...machines];
-    await persistMachines(updated);
+    let updatedList;
+    setMachines((prev) => {
+      updatedList = [newMachine, ...(prev || [])];
+      return updatedList;
+    });
+
+    try {
+      await AsyncStorage.setItem(MACHINES_STORAGE_KEY, JSON.stringify(updatedList));
+    } catch (e) {
+      console.warn('Failed to persist machine data:', e);
+    }
+
     return newMachine;
   };
 
@@ -124,8 +158,8 @@ export const MachineProvider = ({ children }) => {
     const cleanId = id.trim().toUpperCase();
     return machines.find(
       (m) =>
-        m.id.toUpperCase() === cleanId ||
-        m.serialNumber.toUpperCase() === cleanId
+        (m.id && m.id.toUpperCase() === cleanId) ||
+        (m.serialNumber && m.serialNumber.toUpperCase() === cleanId)
     ) || null;
   };
 

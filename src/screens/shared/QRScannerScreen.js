@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   StatusBar,
   Alert,
   Platform,
+  Animated,
+  ActivityIndicator,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -17,6 +19,34 @@ export default function QRScannerScreen({ navigation }) {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const { machines, getMachineById } = useMachines();
+
+  const laserAnim = useRef(new Animated.Value(0)).current;
+
+  // Auto-request camera permissions on mount if not yet granted
+  useEffect(() => {
+    if (permission && !permission.granted && permission.canAskAgain) {
+      requestPermission();
+    }
+  }, [permission]);
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(laserAnim, {
+          toValue: 220,
+          duration: 1800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(laserAnim, {
+          toValue: 0,
+          duration: 1800,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [laserAnim]);
 
   const handleBarcodeScanned = ({ data }) => {
     if (scanned) return;
@@ -75,11 +105,16 @@ export default function QRScannerScreen({ navigation }) {
         <View style={{ width: 36 }} />
       </View>
 
-      {/* Camera View or Permission Prompt */}
-      {permission && permission.granted ? (
+      {/* Camera View, Loading State, or Permission Prompt */}
+      {!permission ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Initializing camera sensor...</Text>
+        </View>
+      ) : permission.granted ? (
         <View style={styles.cameraWrapper}>
           <CameraView
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
             facing="back"
             barcodeScannerSettings={{
               barcodeTypes: ['qr'],
@@ -88,22 +123,30 @@ export default function QRScannerScreen({ navigation }) {
           />
 
           {/* Viewfinder Overlay with High-Tech Crimson Red Reticle & Laser */}
-          <View style={styles.overlayContainer}>
-            <View style={styles.overlayTop} />
-            <View style={styles.overlayCenterRow}>
-              <View style={styles.overlaySide} />
-              <View style={styles.reticle}>
-                <View style={[styles.corner, styles.cornerTL]} />
-                <View style={[styles.corner, styles.cornerTR]} />
-                <View style={[styles.corner, styles.cornerBL]} />
-                <View style={[styles.corner, styles.cornerBR]} />
-                {/* High-Tech Crimson Red Laser Beam */}
-                <View style={styles.scanLaser} />
+          <View style={styles.overlayContainer} pointerEvents="box-none">
+            <View style={styles.overlayTop} pointerEvents="none" />
+            <View style={styles.overlayCenterRow} pointerEvents="box-none">
+              <View style={styles.overlaySide} pointerEvents="none" />
+              <View style={styles.reticle} pointerEvents="none">
+                <View style={[styles.corner, styles.cornerTL]} pointerEvents="none" />
+                <View style={[styles.corner, styles.cornerTR]} pointerEvents="none" />
+                <View style={[styles.corner, styles.cornerBL]} pointerEvents="none" />
+                <View style={[styles.corner, styles.cornerBR]} pointerEvents="none" />
+                {/* High-Tech Crimson Red Animated Laser Beam */}
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.scanLaser,
+                    {
+                      transform: [{ translateY: laserAnim }],
+                    },
+                  ]}
+                />
               </View>
-              <View style={styles.overlaySide} />
+              <View style={styles.overlaySide} pointerEvents="none" />
             </View>
-            <View style={styles.overlayBottom}>
-              <View style={styles.instructionPill}>
+            <View style={styles.overlayBottom} pointerEvents="box-none">
+              <View style={styles.instructionPill} pointerEvents="none">
                 <View style={styles.instructionDot} />
                 <Text style={styles.instructionText}>
                   Align Kaynes asset QR tag within the crimson reticle
@@ -194,9 +237,12 @@ const styles = StyleSheet.create({
   cameraWrapper: {
     flex: 1,
     position: 'relative',
+    backgroundColor: 'transparent',
   },
   overlayContainer: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
+    zIndex: 2,
   },
   overlayTop: {
     flex: 1,
@@ -205,6 +251,7 @@ const styles = StyleSheet.create({
   overlayCenterRow: {
     flexDirection: 'row',
     height: 250,
+    backgroundColor: 'transparent',
   },
   overlaySide: {
     flex: 1,
@@ -218,7 +265,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(217, 30, 42, 0.03)',
+    backgroundColor: 'transparent',
   },
   corner: {
     position: 'absolute',
@@ -251,6 +298,8 @@ const styles = StyleSheet.create({
     borderRightWidth: 4,
   },
   scanLaser: {
+    position: 'absolute',
+    top: 10,
     width: '92%',
     height: 3,
     backgroundColor: COLORS.primary, // Crimson Red Laser Beam
@@ -319,6 +368,18 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#000000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 14,
   },
   simTray: {
     backgroundColor: COLORS.secondary, // Obsidian Black

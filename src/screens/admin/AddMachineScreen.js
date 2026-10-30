@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useMachines } from '../../context/MachineContext';
+import { MachineContext, useMachines } from '../../context/MachineContext';
 import { useAuth } from '../../context/AuthContext';
 import { COLORS } from '../../constants/theme';
 
@@ -25,13 +25,14 @@ const DEPARTMENTS_LIST = [
 ];
 
 export default function AddMachineScreen({ navigation }) {
-  const { addMachine, generateNextTagId } = useMachines();
+  const context = useContext(MachineContext);
+  const { addMachine, generateNextTagId, machines } = context || useMachines();
   const { user } = useAuth();
 
   const [department, setDepartment] = useState('SMT Lines');
   const [tagId, setTagId] = useState('');
   const [name, setName] = useState('');
-  const [model, setModel] = useState('');
+  const [modelNumber, setModelNumber] = useState('');
   const [serialNumber, setSerialNumber] = useState('');
   const [lineBay, setLineBay] = useState('');
   const [status, setStatus] = useState('ACTIVE');
@@ -39,11 +40,13 @@ export default function AddMachineScreen({ navigation }) {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Auto-generate tag ID when department changes or on initial mount
+  // Auto-generate tag ID when department changes or machines list updates
   useEffect(() => {
-    const nextId = generateNextTagId(department);
-    setTagId(nextId);
-  }, [department]);
+    if (generateNextTagId) {
+      const nextId = generateNextTagId(department);
+      setTagId(nextId);
+    }
+  }, [department, machines?.length]);
 
   // Live QR payload: encodes the unique asset tag ID
   const qrValue = tagId || 'KYN-ASSET-PREVIEW';
@@ -53,16 +56,23 @@ export default function AddMachineScreen({ navigation }) {
     if (!name.trim()) {
       newErrors.name = 'Machine name is required';
     }
-    if (!model.trim()) {
-      newErrors.model = 'Model number is required';
+    if (!modelNumber.trim()) {
+      newErrors.modelNumber = 'Model number is required';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = async () => {
-    if (!validateForm()) {
-      Alert.alert('Validation Error', 'Please fill in all required fields marked with *');
+    if (!name.trim() || !modelNumber.trim()) {
+      setErrors({
+        name: !name.trim() ? 'Machine name is required' : null,
+        modelNumber: !modelNumber.trim() ? 'Model number is required' : null,
+      });
+      Alert.alert(
+        'Please fill in required fields',
+        'Machine Name and Model Number are required before saving asset to registry.'
+      );
       return;
     }
 
@@ -71,25 +81,19 @@ export default function AddMachineScreen({ navigation }) {
       await addMachine({
         id: tagId,
         name: name.trim(),
-        model: model.trim(),
+        modelNumber: modelNumber.trim(),
+        model: modelNumber.trim(),
         serialNumber: serialNumber.trim() || `SN-${Date.now().toString().slice(-6)}`,
         department,
-        status,
+        status: status || 'ACTIVE',
         line: lineBay.trim() || `${department} - Station 1`,
         operatorName: user?.name || 'Plant Admin',
       });
 
-      Alert.alert(
-        'Asset Registered',
-        `Machine ${tagId} has been successfully registered into Kaynes EMS database.`,
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      // Immediately return to AdminDashboard upon success
+      navigation.goBack();
     } catch (err) {
+      console.error('Registration failed:', err);
       Alert.alert('Registration Failed', 'Could not save asset to storage.');
     } finally {
       setIsSubmitting(false);
@@ -184,6 +188,8 @@ export default function AddMachineScreen({ navigation }) {
                 value={tagId}
                 onChangeText={setTagId}
                 autoCapitalize="characters"
+                editable={true}
+                pointerEvents="auto"
               />
               <View style={styles.tagHintPill}>
                 <Text style={styles.tagHint}>Auto</Text>
@@ -212,6 +218,10 @@ export default function AddMachineScreen({ navigation }) {
                 placeholder="e.g., Yamaha YSM20R Pick & Place"
                 placeholderTextColor={COLORS.textMuted}
                 value={name}
+                editable={true}
+                pointerEvents="auto"
+                autoCapitalize="words"
+                autoCorrect={false}
                 onFocus={() => setFocusedField('name')}
                 onBlur={() => setFocusedField(null)}
                 onChangeText={(val) => {
@@ -229,30 +239,34 @@ export default function AddMachineScreen({ navigation }) {
             <View
               style={[
                 styles.inputWrapper,
-                focusedField === 'model' && styles.inputWrapperFocused,
-                errors.model && styles.inputErrorBorder,
+                focusedField === 'modelNumber' && styles.inputWrapperFocused,
+                errors.modelNumber && styles.inputErrorBorder,
               ]}
             >
               <MaterialCommunityIcons
                 name="tools"
                 size={20}
-                color={focusedField === 'model' ? COLORS.primary : COLORS.textSecondary}
+                color={focusedField === 'modelNumber' ? COLORS.primary : COLORS.textSecondary}
                 style={styles.inputIcon}
               />
               <TextInput
                 style={styles.textInput}
                 placeholder="e.g., YSM20R-Dual-Beam"
                 placeholderTextColor={COLORS.textMuted}
-                value={model}
-                onFocus={() => setFocusedField('model')}
+                value={modelNumber}
+                editable={true}
+                pointerEvents="auto"
+                autoCapitalize="characters"
+                autoCorrect={false}
+                onFocus={() => setFocusedField('modelNumber')}
                 onBlur={() => setFocusedField(null)}
                 onChangeText={(val) => {
-                  setModel(val);
-                  if (errors.model) setErrors((prev) => ({ ...prev, model: null }));
+                  setModelNumber(val);
+                  if (errors.modelNumber) setErrors((prev) => ({ ...prev, modelNumber: null }));
                 }}
               />
             </View>
-            {errors.model && <Text style={styles.errorText}>{errors.model}</Text>}
+            {errors.modelNumber && <Text style={styles.errorText}>{errors.modelNumber}</Text>}
           </View>
 
           {/* Serial Number */}
@@ -275,6 +289,10 @@ export default function AddMachineScreen({ navigation }) {
                 placeholder="e.g., YMH-2026-9041 (leave blank for auto)"
                 placeholderTextColor={COLORS.textMuted}
                 value={serialNumber}
+                editable={true}
+                pointerEvents="auto"
+                autoCapitalize="characters"
+                autoCorrect={false}
                 onFocus={() => setFocusedField('sn')}
                 onBlur={() => setFocusedField(null)}
                 onChangeText={setSerialNumber}
@@ -302,6 +320,10 @@ export default function AddMachineScreen({ navigation }) {
                 placeholder="e.g., SMT Line 2 - Bay A"
                 placeholderTextColor={COLORS.textMuted}
                 value={lineBay}
+                editable={true}
+                pointerEvents="auto"
+                autoCapitalize="words"
+                autoCorrect={false}
                 onFocus={() => setFocusedField('bay')}
                 onBlur={() => setFocusedField(null)}
                 onChangeText={setLineBay}
@@ -412,13 +434,14 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     position: 'relative',
+    overflow: 'hidden',
     borderWidth: 1.5,
     borderColor: '#374151',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   cornerAccent: {
     position: 'absolute',
@@ -504,6 +527,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1.5,
     borderColor: COLORS.border,
+    zIndex: 1,
+    position: 'relative',
+    elevation: 2,
   },
   inputLabel: {
     fontSize: 11,
@@ -542,6 +568,8 @@ const styles = StyleSheet.create({
   },
   fieldGroup: {
     marginBottom: 16,
+    zIndex: 1,
+    position: 'relative',
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -551,7 +579,9 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     borderRadius: 10,
     paddingHorizontal: 12,
+    minHeight: 48,
     height: 48,
+    zIndex: 1,
   },
   inputWrapperFocused: {
     borderColor: COLORS.primary, // Kaynes Red active border
@@ -568,12 +598,17 @@ const styles = StyleSheet.create({
   },
   inputIcon: {
     marginRight: 10,
+    pointerEvents: 'none',
   },
   textInput: {
     flex: 1,
+    minHeight: 48,
+    height: 48,
     fontSize: 14,
     color: COLORS.textPrimary,
     fontWeight: '600',
+    zIndex: 1,
+    paddingVertical: 0,
   },
   tagHintPill: {
     backgroundColor: '#FFFFFF',
