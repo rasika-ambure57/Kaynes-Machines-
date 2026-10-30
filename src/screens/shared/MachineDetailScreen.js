@@ -10,6 +10,7 @@ import {
   TextInput,
   Alert,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -365,99 +366,108 @@ export default function MachineDetailScreen({ route, navigation }) {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Update Machine Status</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
-              </TouchableOpacity>
-            </View>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
+          <ScrollView
+            contentContainerStyle={styles.modalScrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.modalCard}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Update Machine Status</Text>
+                <TouchableOpacity onPress={() => setModalVisible(false)}>
+                  <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+                </TouchableOpacity>
+              </View>
 
-            <View style={styles.modalTargetRow}>
-              <Text style={styles.modalTargetLabel}>New Target State:</Text>
-              <View
-                style={[
-                  styles.modalStatusPill,
-                  targetStatus === 'ACTIVE' && { backgroundColor: COLORS.activeBg, borderColor: COLORS.active },
-                  targetStatus === 'MAINTENANCE' && { backgroundColor: COLORS.maintenanceBg, borderColor: COLORS.maintenance },
-                  targetStatus === 'DOWN' && { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
-                ]}
-              >
-                <Text
+              <View style={styles.modalTargetRow}>
+                <Text style={styles.modalTargetLabel}>New Target State:</Text>
+                <View
                   style={[
-                    styles.modalStatusPillText,
-                    targetStatus === 'ACTIVE' && { color: COLORS.activeText },
-                    targetStatus === 'MAINTENANCE' && { color: COLORS.maintenanceText },
-                    targetStatus === 'DOWN' && { color: COLORS.primary },
+                    styles.modalStatusPill,
+                    targetStatus === 'ACTIVE' && { backgroundColor: COLORS.activeBg, borderColor: COLORS.active },
+                    targetStatus === 'MAINTENANCE' && { backgroundColor: COLORS.maintenanceBg, borderColor: COLORS.maintenance },
+                    targetStatus === 'DOWN' && { backgroundColor: COLORS.primaryLight, borderColor: COLORS.primary },
                   ]}
                 >
-                  {targetStatus}
-                </Text>
+                  <Text
+                    style={[
+                      styles.modalStatusPillText,
+                      targetStatus === 'ACTIVE' && { color: COLORS.activeText },
+                      targetStatus === 'MAINTENANCE' && { color: COLORS.maintenanceText },
+                      targetStatus === 'DOWN' && { color: COLORS.primary },
+                    ]}
+                  >
+                    {targetStatus}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={styles.modalInputLabel}>OPERATOR / TECHNICIAN NAME</Text>
+              <TextInput
+                style={styles.modalTextInput}
+                value={operatorName}
+                onChangeText={setOperatorName}
+                placeholder="Your name"
+              />
+
+              <Text style={[styles.modalInputLabel, { marginTop: 12 }]}>MAINTENANCE NOTES & REASON</Text>
+              <TextInput
+                style={[
+                  styles.modalTextInput,
+                  styles.modalNotesInput,
+                  isInputFocused && styles.modalNotesInputFocused,
+                ]}
+                value={operatorNote}
+                onChangeText={setOperatorNote}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
+                placeholder="e.g. Cleared feeder jam, replaced nozzle head, run verified."
+                placeholderTextColor={COLORS.textMuted}
+                multiline
+                numberOfLines={3}
+              />
+
+              {/* Quick Suggestion Chips */}
+              <Text style={styles.suggestionTitle}>Quick Presets:</Text>
+              <View style={styles.suggestionGrid}>
+                {getQuickNoteSuggestions().map((sugg) => (
+                  <TouchableOpacity
+                    key={sugg}
+                    style={styles.suggestionChip}
+                    onPress={() => setOperatorNote(sugg)}
+                  >
+                    <Text style={styles.suggestionChipText}>{sugg}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={styles.modalCancelBtn}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.modalConfirmBtn,
+                    targetStatus === 'ACTIVE' && { backgroundColor: COLORS.active },
+                    targetStatus === 'MAINTENANCE' && { backgroundColor: COLORS.maintenance },
+                    targetStatus === 'DOWN' && { backgroundColor: COLORS.primary },
+                  ]}
+                  onPress={handleConfirmStatusChange}
+                >
+                  <Text style={styles.modalConfirmText}>Save & Log Status</Text>
+                </TouchableOpacity>
               </View>
             </View>
-
-            <Text style={styles.modalInputLabel}>OPERATOR / TECHNICIAN NAME</Text>
-            <TextInput
-              style={styles.modalTextInput}
-              value={operatorName}
-              onChangeText={setOperatorName}
-              placeholder="Your name"
-            />
-
-            <Text style={[styles.modalInputLabel, { marginTop: 12 }]}>MAINTENANCE NOTES & REASON</Text>
-            <TextInput
-              style={[
-                styles.modalTextInput,
-                styles.modalNotesInput,
-                isInputFocused && styles.modalNotesInputFocused,
-              ]}
-              value={operatorNote}
-              onChangeText={setOperatorNote}
-              onFocus={() => setIsInputFocused(true)}
-              onBlur={() => setIsInputFocused(false)}
-              placeholder="e.g. Cleared feeder jam, replaced nozzle head, run verified."
-              placeholderTextColor={COLORS.textMuted}
-              multiline
-              numberOfLines={3}
-            />
-
-            {/* Quick Suggestion Chips */}
-            <Text style={styles.suggestionTitle}>Quick Presets:</Text>
-            <View style={styles.suggestionGrid}>
-              {getQuickNoteSuggestions().map((sugg) => (
-                <TouchableOpacity
-                  key={sugg}
-                  style={styles.suggestionChip}
-                  onPress={() => setOperatorNote(sugg)}
-                >
-                  <Text style={styles.suggestionChipText}>{sugg}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={styles.modalCancelBtn}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.modalConfirmBtn,
-                  targetStatus === 'ACTIVE' && { backgroundColor: COLORS.active },
-                  targetStatus === 'MAINTENANCE' && { backgroundColor: COLORS.maintenance },
-                  targetStatus === 'DOWN' && { backgroundColor: COLORS.primary },
-                ]}
-                onPress={handleConfirmStatusChange}
-              >
-                <Text style={styles.modalConfirmText}>Save & Log Status</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -821,8 +831,12 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.65)',
+  },
+  modalScrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 20,
+    paddingVertical: 24,
   },
   modalCard: {
     backgroundColor: COLORS.surface,

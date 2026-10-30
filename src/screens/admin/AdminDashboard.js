@@ -16,20 +16,11 @@ import { useMachines } from '../../context/MachineContext';
 import { COLORS, DEPARTMENTS } from '../../constants/theme';
 
 export default function AdminDashboard({ navigation }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { machines } = useMachines();
 
   const [selectedDepartment, setSelectedDepartment] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Calculate KPI metrics
-  const kpiMetrics = useMemo(() => {
-    const total = machines.length;
-    const active = machines.filter((m) => m.status === 'ACTIVE').length;
-    const maintenance = machines.filter((m) => m.status === 'MAINTENANCE').length;
-    const down = machines.filter((m) => m.status === 'DOWN').length;
-    return { total, active, maintenance, down };
-  }, [machines]);
 
   // Filtered machine list
   const filteredMachines = useMemo(() => {
@@ -139,46 +130,10 @@ export default function AdminDashboard({ navigation }) {
             <Text style={styles.userNameText}>• {user?.name || 'Administrator'}</Text>
           </View>
         </View>
-
-        <TouchableOpacity style={styles.logoutButton} onPress={logout} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="log-out-outline" size={18} color="#FFFFFF" />
-          <Text style={styles.logoutText}>Exit</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Main Content Area */}
       <View style={styles.content}>
-        {/* Top KPI Metric Summary Row */}
-        <View style={styles.kpiContainer}>
-          {/* Total Assets */}
-          <View style={[styles.kpiCard, { borderColor: COLORS.border }]}>
-            <Text style={styles.kpiValue}>{kpiMetrics.total}</Text>
-            <Text style={styles.kpiLabel}>Total Assets</Text>
-            <View style={[styles.kpiIndicatorLine, { backgroundColor: COLORS.secondary }]} />
-          </View>
-
-          {/* Active (Emerald) */}
-          <View style={[styles.kpiCard, { borderColor: COLORS.activeBorder, backgroundColor: COLORS.activeBg }]}>
-            <Text style={[styles.kpiValue, { color: COLORS.activeText }]}>{kpiMetrics.active}</Text>
-            <Text style={[styles.kpiLabel, { color: COLORS.activeText }]}>Active</Text>
-            <View style={[styles.kpiIndicatorLine, { backgroundColor: COLORS.active }]} />
-          </View>
-
-          {/* Maintenance (Amber) */}
-          <View style={[styles.kpiCard, { borderColor: COLORS.maintenanceBorder, backgroundColor: COLORS.maintenanceBg }]}>
-            <Text style={[styles.kpiValue, { color: COLORS.maintenanceText }]}>{kpiMetrics.maintenance}</Text>
-            <Text style={[styles.kpiLabel, { color: COLORS.maintenanceText }]}>Maint.</Text>
-            <View style={[styles.kpiIndicatorLine, { backgroundColor: COLORS.maintenance }]} />
-          </View>
-
-          {/* Down (Kaynes Crimson Red) */}
-          <View style={[styles.kpiCard, { borderColor: COLORS.downBorder, backgroundColor: COLORS.downBg }]}>
-            <Text style={[styles.kpiValue, { color: COLORS.downText }]}>{kpiMetrics.down}</Text>
-            <Text style={[styles.kpiLabel, { color: COLORS.downText }]}>Down</Text>
-            <View style={[styles.kpiIndicatorLine, { backgroundColor: COLORS.primary }]} />
-          </View>
-        </View>
-
         {/* Search Bar with Crisp Border */}
         <View style={styles.searchContainer}>
           <Ionicons name="search-outline" size={18} color={COLORS.textSecondary} style={styles.searchIcon} />
@@ -342,64 +297,8 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     fontWeight: '600',
   },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  logoutText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800',
-    marginLeft: 4,
-  },
   content: {
     flex: 1,
-  },
-  kpiContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 10,
-    justifyContent: 'space-between',
-  },
-  kpiCard: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
-    paddingVertical: 10,
-    paddingHorizontal: 6,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginHorizontal: 3,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  kpiValue: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: COLORS.textPrimary,
-  },
-  kpiLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  kpiIndicatorLine: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 3,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -476,7 +375,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 16,
-    paddingBottom: 90,
+    paddingBottom: 110,
   },
   machineCard: {
     backgroundColor: COLORS.surface,
@@ -597,7 +496,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 80,
     right: 20,
     backgroundColor: COLORS.primary, // Bold Kaynes Red
     flexDirection: 'row',

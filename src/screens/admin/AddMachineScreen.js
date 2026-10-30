@@ -102,8 +102,8 @@ export default function AddMachineScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.keyboardContainer}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1 }}
     >
       <StatusBar barStyle="light-content" backgroundColor={COLORS.secondary} />
 
@@ -121,9 +121,9 @@ export default function AddMachineScreen({ navigation }) {
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={{ paddingBottom: 100 }}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
       >
         {/* Sleek Dark Obsidian QR Code Preview Frame with Red Corner Accents */}
         <View style={styles.qrObsidianFrame}>

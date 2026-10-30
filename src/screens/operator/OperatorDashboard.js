@@ -16,7 +16,7 @@ import { useMachines } from '../../context/MachineContext';
 import { COLORS } from '../../constants/theme';
 
 export default function OperatorDashboard({ navigation }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { machines, getMachineById } = useMachines();
 
   const [manualId, setManualId] = useState('');
@@ -118,11 +118,6 @@ export default function OperatorDashboard({ navigation }) {
             Active Operator: <Text style={{ color: COLORS.primaryLight, fontWeight: '700' }}>{user?.name || 'Floor Operator'}</Text>
           </Text>
         </View>
-
-        <TouchableOpacity style={styles.logoutBtn} onPress={logout} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name="log-out-outline" size={18} color="#FFFFFF" />
-          <Text style={styles.logoutBtnText}>Exit</Text>
-        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -279,23 +274,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontWeight: '500',
   },
-  logoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  logoutBtnText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800',
-    marginLeft: 4,
-  },
   scrollList: {
     paddingHorizontal: 16,
-    paddingBottom: 40,
+    paddingBottom: 90,
   },
   heroScanButton: {
     backgroundColor: COLORS.primary, // Bold Kaynes Crimson Red

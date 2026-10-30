@@ -7,6 +7,9 @@ import { COLORS } from '../constants/theme';
 // Custom Drawer Component
 import CustomDrawerContent from '../components/CustomDrawerContent';
 
+// Bottom Tab Navigator
+import TabNavigator from './TabNavigator';
+
 // Screens
 import LoginScreen from '../screens/auth/LoginScreen';
 import AdminDashboard from '../screens/admin/AdminDashboard';
@@ -21,7 +24,7 @@ import UserManagementScreen from '../screens/drawer/UserManagementScreen';
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
-// Authenticated Drawer Navigator Shell
+// Authenticated Drawer Navigator Shell (wraps TabNavigator as primary screen)
 function MainDrawerNavigator() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
@@ -41,10 +44,10 @@ function MainDrawerNavigator() {
         overlayColor: 'rgba(17, 24, 39, 0.7)', // Obsidian semi-transparent backdrop
       }}
     >
-      {/* 1. Dashboard / Home Screen: Displays Admin or Operator Dashboard based on active role */}
+      {/* 1. Main Bottom Tabs Root */}
       <Drawer.Screen
         name="Dashboard"
-        component={isAdmin ? AdminDashboard : OperatorDashboard}
+        component={TabNavigator}
         options={{
           title: 'Dashboard / Home',
         }}
